@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="gelap">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Pemutar Lagu</title>
+<style>
+  :root{--gl:rgba(10,28,40,.62);--gl2:rgba(255,255,255,.07);--ln:rgba(160,215,240,.2);--tx:#e6f3fa;--mt:#8fb0c2;--ac:#8fd6f0}
+  html[data-tema=terang]{--gl:rgba(255,255,255,.66);--gl2:rgba(0,40,90,.08);--ln:rgba(10,60,110,.22);--tx:#08294a;--mt:#3b607f;--ac:#0a5a9e}
+  *{box-sizing:border-box}
+  /* latar di bawah hanya untuk halaman uji; di web asli, latar laut kamu yang tampil */
+  body{margin:0;min-height:100vh;color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 30% 0,#0b2e40,#02070b 70%) fixed}
+  html[data-tema=terang] body{background:linear-gradient(#4aa5ee,#c4e8ff) fixed}
+
+  .wrap{max-width:640px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 16px 230px}
+  .sb{position:relative;margin-top:44px}
+  .sb svg{position:absolute;top:13px;width:22px;height:22px;fill:none;stroke:var(--mt);stroke-width:2;stroke-linecap:round}
+  .sb .s1{left:15px}
+  .sb input{width:100%;height:48px;border-radius:24px;border:1px solid var(--ln);background:var(--gl);color:var(--tx);padding:0 44px;font:inherit;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);outline:none}
+  .sb input::placeholder{color:var(--mt)}
+  .sb input:focus{border-color:var(--ac)}
+  .sb .x{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;border-radius:50%;background:none;color:var(--mt);cursor:pointer;display:grid;place-items:center}
+  .sb .x svg{position:static;width:18px;height:18px}
+  .sb .x[hidden]{display:none}
+  h2{font-size:13px;font-weight:500;color:var(--mt);letter-spacing:.04em;margin:24px 0 8px}
+  .mt{color:var(--mt)}
+
+  .row{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;cursor:pointer}
+  .row:hover,.row.on{background:var(--gl2)}
+  .row>div:last-child{min-width:0}
+  .row b,.card b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row small,.card small{display:block;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row img,.row .ph{width:48px;height:48px;border-radius:8px;flex:none;object-fit:cover}
+  .ph{display:grid;place-items:center;background:linear-gradient(135deg,#17465f,#0a1c28);color:#8fd6f0;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .card{cursor:pointer;min-width:0}
+  .card img,.card .ph{display:grid;width:100%;aspect-ratio:1;border-radius:14px;margin-bottom:8px;object-fit:cover;transition:transform .25s}
+  .card:hover img{transform:scale(1.03)}
+  .card .ph{font-size:34px}
+  .card.on b,.row.on b{color:var(--ac)}
+
+  .mp{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:10px 14px max(12px,env(safe-area-inset-bottom));background:var(--gl);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--ln);transform:translateY(105%);transition:transform .35s ease}
+  .mp.on{transform:none}
+  .in{max-width:640px;margin:0 auto}
+  #ytb{display:none;aspect-ratio:16/9;max-width:340px;margin:0 auto 10px;border-radius:10px;overflow:hidden;background:#000}
+  .mp.yt #ytb{display:block}
+  #ytb iframe{width:100%;height:100%}
+  .top{display:flex;gap:12px;align-items:center}
+  .top img,.top .ph{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none}
+  .top>div:nth-child(2){min-width:0;flex:1}
+  .top b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top small{color:var(--mt)}
+  .bd{font-size:12px;color:var(--ac);border:1px solid var(--ln);border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .pr{display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:12px;color:var(--mt);font-variant-numeric:tabular-nums}
+  .pr input{flex:1;accent-color:var(--ac);min-width:0}
+  .ct{display:flex;align-items:center;justify-content:center;gap:6px}
+  .ct button{width:42px;height:42px;border:0;border-radius:50%;background:none;color:var(--tx);cursor:pointer;display:grid;place-items:center}
+  .ct button:hover{background:var(--gl2)}
+  .ct svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ct .pl{width:50px;height:50px;background:var(--ac);color:#031018}
+  .ct .pl svg{width:26px;height:26px}
+  #vol{display:none;width:80px;accent-color:var(--ac);margin-left:10px}
+  @media(min-width:560px){#vol{display:block}}
+  #toast{position:fixed;left:50%;bottom:210px;transform:translateX(-50%);background:var(--gl);border:1px solid var(--ln);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:60;max-width:90%;text-align:center}
+  #toast.on{opacity:1}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sb">
+    <svg class="s1" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Cari lagu atau artis (coba ketik 1 huruf)" autocomplete="off" enterkeyhint="search" aria-label="Cari lagu">
+    <button class="x" id="clr" hidden aria-label="Hapus pencarian"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div id="out"></div>
+</div>
+
+<div id="toast" role="status"></div>
+
+<div class="mp" id="mp">
+  <div class="in">
+    <div id="ytb"><div id="ytp"></div></div>
+    <div class="top"><div id="pth"></div><div><b id="pt"></b><small id="pa"></small></div><span class="bd" id="bd"></span></div>
+    <div class="pr"><span id="t1">0:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posisi lagu"><span id="t2">0:00</span></div>
+    <div class="ct">
+      <button id="bprev" aria-label="Lagu sebelumnya"></button>
+      <button id="bback" aria-label="Mundur 10 detik"></button>
+      <button id="bplay" class="pl" aria-label="Putar"></button>
+      <button id="bfwd" aria-label="Maju 10 detik"></button>
+      <button id="bnext" aria-label="Lagu berikutnya"></button>
+      <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume">
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ===== PENGATURAN =====
+  const CFG = {
+    YT_KEY: '' // Opsional. Isi API key YouTube Data v3 untuk lagu PENUH + video. Kosong = pratinjau 30 detik (iTunes)
+  };
+
+  // ===== KATALOG LOKAL (untuk saran instan saat ketik 1 huruf). i = Indonesia, w = luar negeri, * = masuk rekomendasi =====
+  const LOCAL = `Sial|Mahalini|i*
+Hati-Hati di Jalan|Tulus|i*
+Komang|Raim Laode|i*
+Bergema Sampai Selamanya|Nadin Amizah|i*
+Gala Bunga Matahari|Sal Priadi|i*
+Rumah Singgah|Fabio Asher|i*
+Ojo Dibandingke|Farel Prayoga|i*
+Melukis Senja|Budi Doremi|i*
+Evaluasi|Hindia|i
+Rumah ke Rumah|Hindia|i
+Monokrom|Tulus|i
+Lathi|Weird Genius|i
+Pamer Bojo|Didi Kempot|i
+Stasiun Balapan|Didi Kempot|i
+Lagi Syantik|Siti Badriah|i
+Akad|Payung Teduh|i
+Berdua Saja|Payung Teduh|i
+Mangu|Fourtwnty|i
+Zona Nyaman|Fourtwnty|i
+Surat Cinta untuk Starla|Virgoun|i
+Bukti|Virgoun|i
+Cinta Luar Biasa|Andmesh|i
+Tak Ingin Usai|Keisya Levronka|i
+Satu Rasa Cinta|Arsy Widianto|i
+Sempurna|Andra and The Backbone|i
+Kangen|Dewa 19|i
+Separuh Aku|NOAH|i
+Mimpi yang Sempurna|Peterpan|i
+Mungkin Nanti|Peterpan|i
+Pergilah Kasih|Chrisye|i
+Dia|Anji|i
+Merindukanmu|D'MASIV|i
+Sampai Jadi Debu|Banda Neira|i
+Lantas|Juicy Luicy|i
+Rehat|Kunto Aji|i
+Dan|Sheila On 7|i
+Sebuah Kisah Klasik|Sheila On 7|i
+Pelangi di Matamu|Jamrud|i
+Bento|Iwan Fals|i
+Kasih Putih|Glenn Fredly|i
+Ya Sudahlah|Bondan Prakoso|i
+Deen Assalam|Sabyan|i
+Ya Maulana|Sabyan|i
+Allahumma Labbaik|Sabyan|i
+Bila Waktu Telah Berakhir|Opick|i
+Rapuh|Opick|i
+Bapa Engkau Sungguh Baik|JPCC Worship|i
+Blinding Lights|The Weeknd|w*
+Die With a Smile|Lady Gaga, Bruno Mars|w*
+Espresso|Sabrina Carpenter|w*
+Birds of a Feather|Billie Eilish|w*
+As It Was|Harry Styles|w
+Flowers|Miley Cyrus|w
+Cruel Summer|Taylor Swift|w
+Love Story|Taylor Swift|w
+Shape of You|Ed Sheeran|w
+Perfect|Ed Sheeran|w
+Thinking Out Loud|Ed Sheeran|w
+Someone Like You|Adele|w
+Bohemian Rhapsody|Queen|w
+Believer|Imagine Dragons|w
+Counting Stars|OneRepublic|w
+Yellow|Coldplay|w
+Viva La Vida|Coldplay|w
+Sunflower|Post Malone|w
+Levitating|Dua Lipa|w
+Stay|The Kid LAROI, Justin Bieber|w
+Starboy|The Weeknd|w
+Beautiful Things|Benson Boone|w
+Let Her Go|Passenger|w
+Riptide|Vance Joy|w
+Heat Waves|Glass Animals|w
+Insha Allah|Maher Zain|w
+Rahmatun Lil'Alameen|Maher Zain|w
+Hasbi Rabbi|Sami Yusuf|w
+Kun Anta|Humood AlKhudher|w
+Amazing Grace|Chris Tomlin|w
+10,000 Reasons|Matt Redman|w
+Oceans|Hillsong United|w
+Way Maker|Sinach|w
+Gayatri Mantra|Deva Premal|w
+Om Mani Padme Hum|Imee Ooi|w
+Karaniya Metta Sutta|Imee Ooi|w`
+    .split('\n').map(l => { const [t, a, r] = l.split('|'); return { t, a, reg: r[0], rec: r.includes('*') }; });
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const key = (t, a) => ((t || '') + (a || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ID_RE = /indo|dangdut|campursari|keroncong|jawa|sunda|melayu|nasyid|kristen|religi/i;
+  const IC = {
+    play: '<path d="M8 5v14l11-7z" fill="currentColor"/>',
+    pause: '<path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/>',
+    prev: '<path d="M6 5v14"/><path d="M19 5v14L9 12z" fill="currentColor"/>',
+    next: '<path d="M18 5v14"/><path d="M5 5v14l10-7z" fill="currentColor"/>',
+    back: '<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/><text x="12" y="15.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
+    fwd: '<path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/><text x="12" y="15.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">10</text>'
+  };
+  const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+  const thumb = m => m.art ? `<img src="${esc(m.art)}" alt="" loading="lazy">` : `<div class="ph">${esc((m.t[0] || '♪').toUpperCase())}</div>`;
+
+  // ===== iTunes Search API (gratis, tanpa key). fetch dulu, JSONP sebagai cadangan =====
+  const cache = new Map();
+  function jsonp(url) {
+    return new Promise((res, rej) => {
+      const cb = '_it' + Math.random().toString(36).slice(2), s = document.createElement('script');
+      const end = () => { clearTimeout(to); delete window[cb]; s.remove(); };
+      const to = setTimeout(() => { end(); rej(new Error('timeout')); }, 8000);
+      window[cb] = d => { end(); res(d); };
+      s.onerror = () => { end(); rej(new Error('jsonp')); };
+      s.src = url + '&callback=' + cb;
+      document.head.appendChild(s);
+    });
+  }
+  async function it(p) {
+    const url = 'https://itunes.apple.com/search?' + new URLSearchParams({ media: 'music', entity: 'song', country: 'ID', ...p });
+    if (cache.has(url)) return cache.get(url);
+    let d;
+    try { d = await (await fetch(url)).json(); } catch (e) { d = await jsonp(url); }
+    const out = (d.results || []).filter(x => x.previewUrl).map(x => ({
+      t: x.trackName, a: x.artistName, genre: x.primaryGenreName, preview: x.previewUrl,
+      art: x.artworkUrl100 || '', artL: (x.artworkUrl100 || '').replace('100x100', '300x300')
+    }));
+    cache.set(url, out);
+    return out;
+  }
+
+  // cari pratinjau + cover untuk lagu katalog lokal (disimpan 24 jam di browser)
+  async function resolve(m) {
+    if (m.preview) return m;
+    const k = 'mus1:' + key(m.t, m.a);
+    try { const c = JSON.parse(localStorage.getItem(k)); if (c && Date.now() - c.ts < 864e5) return Object.assign(m, c.d); } catch (e) {}
+    const r = await it({ term: m.t + ' ' + m.a, limit: 8 });
+    const kk = key(m.t, '');
+    const b = r.find(x => { const y = key(x.t, ''); return y.includes(kk) || kk.includes(y); });
+    if (!b) return null;
+    const d = { preview: b.preview, art: b.art, artL: b.artL };
+    Object.assign(m, d);
+    try { localStorage.setItem(k, JSON.stringify({ ts: Date.now(), d })); } catch (e) {}
+    return m;
+  }
+
+  // ===== PENCARIAN =====
+  let view = { list: [] }, seq = 0, timer, recs = null;
+
+  function build(q, remote) {
+    const ql = q.toLowerCase(), st = m => m.t.toLowerCase().startsWith(ql), intl = q.length >= 5 || q.includes(' ');
+    const loc = LOCAL.filter(m => q.length === 1 ? st(m) : (m.t + ' ' + m.a).toLowerCase().includes(ql)).sort((x, y) => st(y) - st(x));
+    const seen = new Set(), ID = [], W = [], rm = new Map(remote.map(r => [key(r.t, ''), r]));
+    const add = (arr, m) => { const k = key(m.t, ''); if (!seen.has(k)) { seen.add(k); arr.push(m); } };
+    for (const m of loc) { const r = rm.get(key(m.t, '')); add(m.reg === 'i' ? ID : W, r ? { ...r, reg: m.reg } : m); }
+    for (const r of remote) {
+      const l = LOCAL.find(m => key(m.t, '') === key(r.t, ''));
+      const reg = l ? l.reg : (ID_RE.test(r.genre || '') ? 'i' : 'w');
+      add(reg === 'i' ? ID : W, { ...r, reg });
+    }
+    return { ID: ID.slice(0, 10), W: intl ? W.slice(0, 8) : [] };
+  }
+
+  const rowH = (m, i) => `<div class="row" data-i="${i}">${thumb(m)}<div><b>${esc(m.t)}</b><small>${esc(m.a)}</small></div></div>`;
+  function showResults(ID, W, msg) {
+    view.list = [...ID, ...W];
+    let h = '';
+    if (ID.length) h += '<h2>Lagu Indonesia</h2>' + ID.map((m, i) => rowH(m, i)).join('');
+    if (W.length) h += '<h2>Luar negeri</h2>' + W.map((m, i) => rowH(m, ID.length + i)).join('');
+    if (msg) h += `<p class="mt">${msg}</p>`;
+    else if (!h) h = '<p class="mt">Tidak ada hasil. Untuk lagu luar negeri, ketik judul lengkap atau kata kuncinya.</p>';
+    $('#out').innerHTML = h;
+    markOn();
+  }
+
+  async function remoteSearch(q) {
+    const my = ++seq;
+    const loc = build(q, []);
+    try {
+      const r = await it({ term: q, limit: 30 });
+      if (my !== seq || $('#q').value.trim() !== q) return;
+      const b = build(q, r);
+      showResults(b.ID, b.W);
+    } catch (e) {
+      if (my === seq) showResults(loc.ID, loc.W, 'Pencarian online sedang tidak tersedia atau dibatasi. Coba lagi sebentar.');
+    }
+  }
+
+  function pickRecs() {
+    const sh = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
+    const R = LOCAL.filter(m => m.rec);
+    return [...sh(R.filter(m => m.reg === 'i')).slice(0, 4), ...sh(R.filter(m => m.reg === 'w')).slice(0, 2)];
+  }
+  function paintRecs() {
+    if ($('#q').value.trim()) return;
+    view.list = recs;
+    $('#out').innerHTML = '<h2>Rekomendasi untukmu</h2><div class="grid">' +
+      recs.map((m, i) => `<div class="card" data-i="${i}">${thumb(m)}<b>${esc(m.t)}</b><small>${esc(m.a)}</small></div>`).join('') + '</div>';
+    markOn();
+  }
+  function showRecs() {
+    if (!recs) {
+      recs = pickRecs();
+      (async () => { for (const m of recs) { await resolve(m).catch(() => 0); paintRecs(); await new Promise(r => setTimeout(r, 250)); } })();
+    }
+    paintRecs();
+  }
+
+  const qEl = $('#q');
+  qEl.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = qEl.value.trim();
+    $('#clr').hidden = !q;
+    if (!q) { seq++; showRecs(); return; }
+    const b = build(q, []);
+    showResults(b.ID, b.W, q.length >= 2 ? 'Mencari lebih banyak…' : '');
+    if (q.length >= 2) timer = setTimeout(() => remoteSearch(q), 350);
+  });
+  $('#clr').addEventListener('click', () => { qEl.value = ''; qEl.dispatchEvent(new Event('input')); qEl.focus(); });
+  $('#out').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r) play(view.list, +r.dataset.i); });
+
+  // ===== PEMUTAR =====
+  const A = new Audio(); A.preload = 'auto';
+  const SIL = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  let YTP = null, YTprom = null, mode = 'audio', ctxList = [], idx = -1, tok = 0, fails = 0, dragging = false;
+  const isData = () => A.src.startsWith('data:');
+
+  document.addEventListener('pointerdown', () => { A.src = SIL; A.play().catch(() => {}); }, { once: true });
+
+  $('#bprev').innerHTML = svg('prev'); $('#bback').innerHTML = svg('back');
+  $('#bfwd').innerHTML = svg('fwd'); $('#bnext').innerHTML = svg('next'); $('#bplay').innerHTML = svg('play');
+
+  const fmt = s => isFinite(s) && s > 0 ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
+  const curT = () => mode === 'yt' ? (YTP && YTP.getCurrentTime ? YTP.getCurrentTime() : 0) : A.currentTime;
+  const durT = () => mode === 'yt' ? (YTP && YTP.getDuration ? YTP.getDuration() : 0) : (A.duration || 30);
+  const isP = () => mode === 'yt' ? !!(YTP && YTP.getPlayerState && YTP.getPlayerState() === 1) : (!A.paused && !isData());
+  function setPlay(on) { $('#bplay').innerHTML = svg(on ? 'pause' : 'play'); $('#bplay').setAttribute('aria-label', on ? 'Jeda' : 'Putar'); }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 3200); }
+  function markOn() {
+    const m = ctxList[idx], same = ctxList === view.list;
+    document.querySelectorAll('[data-i]').forEach(el => el.classList.toggle('on', same && ctxList[+el.dataset.i] === m));
+  }
+  function showPlayer(m, badge) {
+    $('#mp').classList.add('on');
+    $('#pth').innerHTML = thumb(m); $('#pt').textContent = m.t; $('#pa').textContent = m.a; $('#bd').textContent = badge;
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: m.t, artist: m.a, artwork: m.artL ? [{ src: m.artL, sizes: '300x300' }] : [] });
+    }
+  }
+
+  async function play(list, i, hops = 0) {
+    ctxList = list; idx = i; const my = ++tok, m = list[i];
+    showPlayer(m, 'Memuat…'); markOn();
+    const ok = await resolve(m).catch(() => null);
+    if (my !== tok) return;
+    if (CFG.YT_KEY) {
+      const v = await ytId(m);
+      if (my !== tok) return;
+      if (v) return startYT(v, m);
+    }
+    if (!ok) {
+      toast('Pratinjau lagu ini tidak ditemukan.');
+      if (list.length > 1 && hops < list.length - 1) return play(list, (i + 1) % list.length, hops + 1);
+      return setPlay(false);
+    }
+    startAudio(m);
+  }
+
+  function startAudio(m) {
+    if (YTP && YTP.pauseVideo) YTP.pauseVideo();
+    mode = 'audio'; $('#mp').classList.remove('yt');
+    A.src = m.preview; A.play().catch(() => { setPlay(false); toast('Ketuk tombol putar untuk memulai.'); });
+    showPlayer(m, 'Pratinjau 30 detik');
+  }
+
+  // ----- YouTube (opsional, butuh CFG.YT_KEY) -----
+  async function ytId(m) {
+    const k = 'mus1yt:' + key(m.t, m.a);
+    try { const c = localStorage.getItem(k); if (c) return c; } catch (e) {}
+    try {
+      const r = await fetch('https://www.googleapis.com/youtube/v3/search?' + new URLSearchParams({
+        part: 'snippet', type: 'video', videoEmbeddable: 'true', videoCategoryId: '10', maxResults: '1',
+        q: m.t + ' ' + m.a + ' official audio', key: CFG.YT_KEY
+      }));
+      const d = await r.json(), v = d.items && d.items[0] && d.items[0].id.videoId;
+      if (v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      return v || null;
+    } catch (e) { return null; }
+  }
+  function ytReady() {
+    if (YTprom) return YTprom;
+    YTprom = new Promise(res => {
+      window.onYouTubeIframeAPIReady = () => {
+        YTP = new YT.Player('ytp', {
+          width: '100%', height: '100%', playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+          events: { onReady: () => res(YTP), onStateChange: e => { if (e.data === 0) step(1); setPlay(e.data === 1); if (e.data === 1) fails = 0; } }
+        });
+      };
+      const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+    });
+    return YTprom;
+  }
+  async function startYT(v, m) {
+    A.pause(); mode = 'yt'; $('#mp').classList.add('yt');
+    showPlayer(m, 'Lagu penuh');
+    const p = await ytReady(); p.loadVideoById(v);
+  }
+
+  // ----- kontrol -----
+  function toggle() {
+    if (mode === 'yt') { if (YTP) (isP() ? YTP.pauseVideo() : YTP.playVideo()); }
+    else if (A.src && !isData()) { A.paused ? A.play().catch(() => {}) : A.pause(); }
+  }
+  function seekTo(s) { mode === 'yt' ? YTP && YTP.seekTo(s, true) : (A.currentTime = Math.max(0, s)); }
+  function step(d) { if (ctxList.length) play(ctxList, (idx + d + ctxList.length) % ctxList.length); }
+  const prev = () => curT() > 3 ? seekTo(0) : step(-1);
+
+  $('#bplay').onclick = toggle; $('#bprev').onclick = prev; $('#bnext').onclick = () => step(1);
+  $('#bback').onclick = () => seekTo(Math.max(0, curT() - 10));
+  $('#bfwd').onclick = () => seekTo(Math.min(durT() || 1e9, curT() + 10));
+  $('#vol').oninput = e => { A.volume = e.target.value / 100; if (YTP && YTP.setVolume) YTP.setVolume(+e.target.value); };
+  A.volume = 0.8;
+
+  const seek = $('#seek');
+  seek.addEventListener('input', () => { dragging = true; $('#t1').textContent = fmt(seek.value / 1000 * durT()); });
+  seek.addEventListener('change', () => { seekTo(seek.value / 1000 * durT()); dragging = false; });
+
+  A.addEventListener('play', () => { if (!isData()) setPlay(true); });
+  A.addEventListener('pause', () => { if (!isData()) setPlay(false); });
+  A.addEventListener('playing', () => { fails = 0; });
+  A.addEventListener('ended', () => { if (!isData()) step(1); });
+  A.addEventListener('error', () => {
+    if (isData() || !ctxList.length) return;
+    if (++fails < 6) { toast('Gagal memutar, lanjut ke lagu berikutnya…'); step(1); } else toast('Lagu tidak bisa diputar saat ini.');
+  });
+
+  setInterval(() => {
+    if (dragging || !$('#mp').classList.contains('on')) return;
+    const c = curT(), d = durT();
+    $('#t1').textContent = fmt(c); $('#t2').textContent = fmt(d);
+    seek.value = d ? Math.min(1000, c / d * 1000) : 0;
+    if (mode === 'yt') setPlay(isP());
+  }, 250);
+
+  if ('mediaSession' in navigator) {
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+    h('play', toggle); h('pause', toggle); h('previoustrack', prev); h('nexttrack', () => step(1));
+    h('seekbackward', () => seekTo(curT() - 10)); h('seekforward', () => seekTo(curT() + 10));
+  }
+
+  showRecs();
+})();
+</script>
+</body>
+</html>
