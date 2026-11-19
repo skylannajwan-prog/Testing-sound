@@ -163,7 +163,7 @@
   <div class="r"><span class="bd" id="bd"></span><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></svg><input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
 </footer>
 
-<script>window.addEventListener('error',function(e){var o=document.getElementById('out');if(o)o.innerHTML='<p style="padding:8px 0;color:#f66">Terjadi error: '+e.message+' (baris '+e.lineno+')</p>'});</script>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errb');if(!b){b=document.createElement('div');b.id='errb';b.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99;background:#300;color:#fbb;padding:8px 12px;border-radius:8px;font:12px/1.4 sans-serif';b.onclick=function(){b.remove()};document.body.appendChild(b)}b.textContent='Error: '+e.message+' | '+String(e.filename||'inline').split('/').pop().slice(0,50)+':'+e.lineno});</script>
 <script>
 (() => {
   // ===== PENGATURAN =====
@@ -326,19 +326,11 @@ Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split
 
   // ===== iTunes Search API (gratis, tanpa key). fetch dulu, JSONP sebagai cadangan =====
   const cache = new Map();
-  function jsonp(url) {
-    return new Promise((res, rej) => {
-      const cb = '_it' + Math.random().toString(36).slice(2), s = document.createElement('script');
-      const end = () => { clearTimeout(to); delete window[cb]; s.remove(); };
-      const to = setTimeout(() => { end(); rej(new Error('timeout')); }, 8000);
-      window[cb] = d => { end(); res(d); };
-      s.onerror = () => { end(); rej(new Error('jsonp')); };
-      s.src = url + '&callback=' + cb;
-      document.head.appendChild(s);
-    });
-  }
   async function it(p) {
     const url = 'https://itunes.apple.com/search?' + new URLSearchParams({ media: 'music', entity: 'song', country: 'ID', ...p });
     if (cache.has(url)) return cache.get(url);
     let d;
-    try { 
+    d = await (await fetch(url)).json();
+    const out = (d.results || []).filter(x => x.previewUrl).map(x => ({
+      t: x.trackName, a: x.artistName, genre: x.primaryGenreName, preview: x.previewUrl,
+      art: x.artworkUrl100 || '', artL: (x.artw
