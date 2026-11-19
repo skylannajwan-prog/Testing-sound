@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemutar Lagu</title>
+<style>
+  :root{--p:#121212;--c:#181818;--h:#262626;--ln:rgba(255,255,255,.1);--tx:#f4f4f4;--mt:#a3a3a3;--bg:#000;--in:#2a2a2a;--in2:#303030;--ac:#fff;--acx:#000;--bar:rgba(24,24,24,.55);--row:#1f1f1f;--top:linear-gradient(#202020,#121212 360px);--ph:linear-gradient(135deg,#2e2e2e,#111);--phc:#ddd;--sc:#333;--mpb:#000}
+  html[data-tema=terang]{--p:#fff;--c:#f3f3f3;--h:#e7e7e7;--ln:rgba(0,0,0,.12);--tx:#111;--mt:#666;--bg:#e8e8e8;--in:#eee;--in2:#e5e5e5;--ac:#111;--acx:#fff;--bar:rgba(255,255,255,.65);--row:#f0f0f0;--top:linear-gradient(#efefef,#fff 360px);--ph:linear-gradient(135deg,#e2e2e2,#fafafa);--phc:#333;--sc:#ccc;--mpb:#fff}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  button,input{font:inherit}
+  .app{display:grid;grid-template-columns:250px 1fr;gap:8px;height:100%;padding:8px}
+  .app.pb{padding-bottom:104px}
+  .pn{background:var(--p);border-radius:12px;overflow:hidden}
+  .sd{display:flex;flex-direction:column;padding:26px 14px 18px;gap:4px}
+  .logo{font-size:21px;font-weight:800;letter-spacing:.01em;padding:0 10px 22px}
+  .nv{display:flex;gap:14px;align-items:center;padding:11px 10px;border:0;background:none;color:var(--mt);font-weight:600;border-radius:8px;cursor:pointer;text-align:left}
+  .nv svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .nv:hover,.nv.on{color:var(--tx)}
+  .viny{margin-top:auto;text-align:center;color:var(--mt);font-size:12px;padding:20px 8px}
+  .viny svg{display:block;margin:0 auto 12px;width:100px;height:100px;fill:none;stroke:var(--ac);opacity:.3;animation:spin 8s linear infinite;animation-play-state:paused;transition:opacity .6s}
+  body.playing .viny svg{animation-play-state:running;opacity:.65}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .mn{position:relative;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--sc) transparent;overscroll-behavior-y:contain;background:var(--top)}
+  .fx{position:sticky;top:0;height:0;pointer-events:none;z-index:0}
+  .ring{position:absolute;border:1px solid var(--ac);border-radius:50%;opacity:0;animation:pulse 7s ease-in-out infinite}
+  .ring:nth-child(1){width:260px;height:260px;right:-90px;top:-130px}
+  .ring:nth-child(2){width:420px;height:420px;right:-170px;top:-210px;animation-delay:2.2s}
+  .ring:nth-child(3){width:580px;height:580px;right:-250px;top:-290px;animation-delay:4.4s}
+  @keyframes pulse{0%,100%{opacity:0;transform:scale(.94)}50%{opacity:.12;transform:scale(1.03)}}
+  .dt{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--ac);opacity:0;animation:tw 6s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:.4;transform:translateY(-16px)}}
+
+  .bar{position:sticky;top:0;z-index:5;padding:16px 32px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);background:var(--bar)}
+  .sb{position:relative;max-width:460px}
+  .sb svg{position:absolute;left:16px;top:12px;width:22px;height:22px;fill:none;stroke:var(--mt);stroke-width:2;stroke-linecap:round}
+  .sb input{width:100%;height:46px;border-radius:23px;border:1px solid transparent;background:var(--in);color:var(--tx);padding:0 46px;outline:none;transition:border-color .2s,background .2s}
+  .sb input:hover{background:var(--in2)}
+  .sb input:focus{border-color:var(--ac)}
+  .sb input::placeholder{color:var(--mt)}
+  .sb .x{position:absolute;right:6px;top:5px;width:36px;height:36px;border:0;border-radius:50%;background:none;color:var(--mt);cursor:pointer;display:grid;place-items:center}
+  .sb .x svg{position:static;width:18px;height:18px}
+  .sb .x[hidden]{display:none}
+  .cn{position:relative;z-index:1;padding:28px 32px 70px}
+  h1{font-size:32px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{color:var(--mt);margin:0 0 36px}
+  h2{font-size:22px;font-weight:700;margin:40px 0 18px}
+  .mt{color:var(--mt)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px}
+  .card{background:var(--c);padding:14px;border-radius:10px;cursor:pointer;min-width:0;transition:background .25s}
+  .card:hover,.card.on{background:var(--h)}
+  .im{position:relative;margin-bottom:14px}
+  .card img,.card .ph{display:grid;width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .card .ph{font-size:40px}
+  .pb2{position:absolute;right:8px;bottom:8px;width:44px;height:44px;border-radius:50%;background:var(--ac);color:var(--acx);display:grid;place-items:center;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;box-shadow:0 8px 16px rgba(0,0,0,.45)}
+  .pb2 svg{width:22px;height:22px}
+  .card:hover .pb2,.card.on .pb2{opacity:1;transform:none}
+  .card b,.row b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card small,.row small{display:block;color:var(--mt);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row{display:flex;gap:14px;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .row>div:last-child{min-width:0}
+  .row:hover,.row.on{background:var(--row)}
+  .row img,.row .ph{width:48px;height:48px;border-radius:6px;flex:none;object-fit:cover}
+  .ph{display:grid;place-items:center;background:var(--ph);color:var(--phc);font-weight:700}
+  .on b{text-decoration:underline;text-underline-offset:3px}
+
+  .mp{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:1fr minmax(320px,2fr) 1fr;align-items:center;gap:16px;padding:12px 20px max(12px,env(safe-area-inset-bottom));background:var(--mpb);border-top:1px solid var(--ln);transform:translateY(105%);transition:transform .35s ease}
+  .mp.on{transform:none}
+  .l{display:flex;gap:12px;align-items:center;min-width:0}
+  .l img,.l .ph{width:56px;height:56px;border-radius:6px;object-fit:cover;flex:none}
+  .l>div:last-child{min-width:0}
+  .l b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .l small{color:var(--mt)}
+  .c{display:flex;flex-direction:column;gap:4px}
+  .ct{display:flex;justify-content:center;gap:8px;align-items:center}
+  .ct button{width:38px;height:38px;border:0;border-radius:50%;background:none;color:var(--mt);cursor:pointer;display:grid;place-items:center}
+  .ct button:hover{color:var(--tx)}
+  .ct svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ct .pl{width:44px;height:44px;background:var(--ac);color:var(--acx)}
+  .ct .pl:hover{transform:scale(1.06)}
+  .pr{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mt);font-variant-numeric:tabular-nums}
+  .pr input,#vol{accent-color:var(--ac);flex:1;min-width:0}
+  .r{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+  .r svg{width:20px;height:20px;fill:none;stroke:var(--mt);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #vol{flex:none;width:100px}
+  .bd{font-size:12px;color:var(--tx);border:1px solid var(--ln);border-radius:20px;padding:2px 10px;white-space:nowrap}
+  #toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--ac);color:var(--acx);padding:9px 18px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s;z-index:60;max-width:90%;text-align:center}
+  #toast.on{opacity:1}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+  @media(max-width:760px){
+    .app{grid-template-columns:1fr;padding:0}.app.pb{padding-bottom:158px}.pn{border-radius:0}.sd{display:none}
+    .bar{padding:12px 68px 12px 18px}.tg{top:11px;right:14px}.ptr{left:50%}.cn{padding:22px 18px 60px}h1{font-size:26px}.grid{gap:14px;grid-template-columns:repeat(2,1fr)}
+    .mp{grid-template-columns:1fr;gap:4px;padding:10px 16px}.r{display:none}.l img,.l .ph{width:44px;height:44px}
+    #toast{bottom:170px}
+  }
+  .tg{position:fixed;top:16px;right:24px;z-index:40;width:42px;height:42px;border:0;border-radius:50%;background:var(--ac);color:var(--acx);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .2s}
+  .tg:hover{transform:scale(1.08)}
+  .tg svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ptr{position:fixed;top:76px;left:258px;right:8px;margin:0 auto;width:40px;height:40px;border-radius:50%;background:var(--ac);color:var(--acx);display:grid;place-items:center;z-index:30;pointer-events:none;opacity:0;transform:translateY(calc(var(--y,0px) - 56px));transition:transform .2s,opacity .2s;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  .ptr svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+  .ptr.spin svg{animation:spin .8s linear infinite!important}
+  .wave{position:fixed;left:258px;right:8px;bottom:0;height:min(260px,40vh);display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:0 28px;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0;-webkit-mask-image:linear-gradient(transparent,#000);mask-image:linear-gradient(transparent,#000)}
+  body.cari .wave{opacity:.16}
+  .wave i{flex:1;max-width:10px;height:100%;border-radius:6px 6px 0 0;background:var(--ac);transform-origin:bottom;transform:scaleY(.12);animation:eq 1.8s ease-in-out infinite}
+  @keyframes eq{0%,100%{transform:scaleY(.12)}50%{transform:scaleY(var(--h,.7))}}
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .row{animation:up .4s ease both}
+  .em{display:grid;justify-items:center;text-align:center;gap:16px;padding:64px 0;color:var(--mt)}
+  .em svg{width:96px;height:96px;fill:none;stroke:var(--ac);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.5;animation:bob 3s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-8px) rotate(6deg)}}
+  .ld{display:inline-flex;gap:4px;vertical-align:middle;margin-right:10px}
+  .ld i{width:6px;height:6px;border-radius:50%;background:var(--ac);animation:dot 1s ease-in-out infinite both}
+  .ld i:nth-child(2){animation-delay:.15s}.ld i:nth-child(3){animation-delay:.3s}
+  @keyframes dot{0%,80%,100%{transform:scale(.4);opacity:.4}40%{transform:scale(1);opacity:1}}
+  @media(max-width:760px){.wave,.ptr{left:0;right:0}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sd pn">
+    <div class="logo">&#x266A; Pemutar</div>
+    <button class="nv on" id="nh"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>Beranda</button>
+    <button class="nv" id="ns"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Cari</button>
+    <div class="viny"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="6"/><path d="M50 4a46 46 0 0 1 20 4" stroke-width="3" stroke-linecap="round"/></svg>Putar lagu, nikmati suasananya</div>
+  </aside>
+  <main class="mn pn" id="mn">
+    <div class="fx" id="fx"><i class="ring"></i><i class="ring"></i><i class="ring"></i></div>
+    <div class="bar"><div class="sb">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Cari lagu atau artis" autocomplete="off" enterkeyhint="search" aria-label="Cari lagu">
+      <button class="x" id="clr" hidden aria-label="Hapus pencarian"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div></div>
+    <div class="cn"><div id="out"><p class="mt" style="padding:8px 0">Memuat&#x2026; (jika tulisan ini tidak hilang, script gagal berjalan)</p></div></div>
+  </main>
+</div>
+
+<div class="wave" id="wv"></div>
+<button class="tg" id="tg"></button>
+<div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4"/></svg></div>
+<audio id="au" playsinline></audio>
+<div id="toast" role="status"></div>
+
+<footer class="mp" id="mp">
+  <div class="l"><div id="pth"></div><div><b id="pt"></b><small id="pa"></small></div></div>
+  <div class="c">
+    <div class="ct">
+      <button id="bprev" aria-label="Lagu sebelumnya"></button>
+      <button id="bback" aria-label="Mundur 10 detik"></button>
+      <button id="bplay" class="pl" aria-label="Putar"></button>
+      <button id="bfwd" aria-label="Maju 10 detik"></button>
+      <button id="bnext" aria-label="Lagu berikutnya"></button>
+    </div>
+    <div class="pr"><span id="t1">0:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posisi lagu"><span id="t2">0:00</span></div>
+  </div>
+  <div class="r"><span class="bd" id="bd"></span><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></svg><input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
+</footer>
+
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errb');if(!b){b=document.createElement('div');b.id='errb';b.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99;background:#300;color:#fbb;padding:8px 12px;border-radius:8px;font:12px/1.4 sans-serif;word-break:break-all';b.onclick=function(){b.remove()};document.body.appendChild(b)}var n=e.lineno,m='Error: '+e.message+' | '+String(e.filename||'inline').split('/').pop()+':'+n;b.textContent=m;try{fetch(location.href,{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var L=t.split('\n');b.textContent=m+' || total baris '+L.length+', '+t.length+' karakter || baris '+n+': '+(L[n-1]||'').slice(0,140)+' || sebelumnya: '+(L[n-2]||'').slice(0,100)})}catch(x){}});</script>
+<script>
+(() => {
+
+    const LOCAL = `Sial|Mahalini|i*
+Hati-Hati di Jalan|Tulus|i*
+Komang|Raim Laode|i*
+Bergema Sampai Selamanya|Nadin Amizah|i*
+Gala Bunga Matahari|Sal Priadi|i*
+Rumah Singgah|Fabio Asher|i*
+Ojo Dibandingke|Farel Prayoga|i*
+Melukis Senja|Budi Doremi|i*
+Evaluasi|Hindia|i
+Rumah ke Rumah|Hindia|i
+Monokrom|Tulus|i
+Lathi|Weird Genius|i
+Pamer Bojo|Didi Kempot|i
+Stasiun Balapan|Didi Kempot|i
+Lagi Syantik|Siti Badriah|i
+Akad|Payung Teduh|i
+Berdua Saja|Payung Teduh|i
+Mangu|Fourtwnty|i
+Zona Nyaman|Fourtwnty|i
+Surat Cinta untuk Starla|Virgoun|i
+Bukti|Virgoun|i
+Cinta Luar Biasa|Andmesh|i
+Tak Ingin Usai|Keisya Levronka|i
+Satu Rasa Cinta|Arsy Widianto|i
+Sempurna|Andra and The Backbone|i
+Kangen|Dewa 19|i
+Separuh Aku|NOAH|i
+Mimpi yang Sempurna|Peterpan|i
+Mungkin Nanti|Peterpan|i
+Pergilah Kasih|Chrisye|i
+Dia|Anji|i
+Merindukanmu|D'MASIV|i
+Sampai Jadi Debu|Banda Neira|i
+Lantas|Juicy Luicy|i
+Rehat|Kunto Aji|i
+Dan|Sheila On 7|i
+Sebuah Kisah Klasik|Sheila On 7|i
+Pelangi di Matamu|Jamrud|i
+Bento|Iwan Fals|i
+Kasih Putih|Glenn Fredly|i
+Ya Sudahlah|Bondan Prakoso|i
+Deen Assalam|Sabyan|i
+Ya Maulana|Sabyan|i
+Allahumma Labbaik|Sabyan|i
+Bila Waktu Telah Berakhir|Opick|i
+Rapuh|Opick|i
+Bapa Engkau Sungguh Baik|JPCC Worship|i
+Blinding Lights|The Weeknd|w*
+Die With a Smile|Lady Gaga, Bruno Mars|w*
+Espresso|Sabrina Carpenter|w*
+Birds of a Feather|Billie Eilish|w*
+As It Was|Harry Styles|w
+Flowers|Miley Cyrus|w
+Cruel Summer|Taylor Swift|w
+Love Story|Taylor Swift|w
+Shape of You|Ed Sheeran|w
+Perfect|Ed Sheeran|w
+Thinking Out Loud|Ed Sheeran|w
+Someone Like You|Adele|w
+Bohemian Rhapsody|Queen|w
+Believer|Imagine Dragons|w
+Counting Stars|OneRepublic|w
+Yellow|Coldplay|w
+Viva La Vida|Coldplay|w
+Sunflower|Post Malone|w
+Levitating|Dua Lipa|w
+Stay|The Kid LAROI, Justin Bieber|w
+Starboy|The Weeknd|w
+Beautiful Things|Benson Boone|w
+Let Her Go|Passenger|w
+Riptide|Vance Joy|w
+Heat Waves|Glass Animals|w
+Insha Allah|Maher Zain|w
+Rahmatun Lil'Alameen|Maher Zain|w
+Hasbi Rabbi|Sami Yusuf|w
+Kun Anta|Humood AlKhudher|w
+Amazing Grace|Chris Tomlin|w
+10,000 Reasons|Matt Redman|w
+Oceans|Hillsong United|w
+Way Maker|Sinach|w
+Gayatri Mantra|Deva Premal|w
+Om Mani Padme Hum|Imee Ooi|w
+Karaniya Metta Sutta|Imee Ooi|w`
+    .split('\n').map(l => { const [t, a, r] = l.split('|'); return { t, a, reg: r[0], rec: r.includes('*') }; });
+  LOCAL.push(...`Pejantan Tangguh|Sheila On 7|i
+Melompat Lebih Tinggi|Sheila On 7|i
+Pamit|Tulus|i
+Sepatu|Tulus|i
+Gajah|Tulus|i
+Jangan Cintai Aku Apa Adanya|Tulus|i
+Pupus|Dewa 19|i
+Cemburu|Dewa 19|i
+Roman Picisan|Dewa 19|i
+Tak Bisakah|Peterpan|i
+Ada Apa Denganmu|Peterpan|i
+Semua Tentang Kita|Peterpan|i
+Kali Kedua|Raisa|i
+Mantan Terindah|Kahitna|i
+Cerita Cinta|Kahitna|i
+Serba Salah|Raisa|i
+Tetap Dalam Jiwa|Isyana Sarasvati|i
+Sadis|Afgan|i
+Bukan Cinta Biasa|Afgan|i
+Cinta dan Rahasia|Yura Yunita, Glenn Fredly|i
+To the Bone|Pamungkas|i
+Secukupnya|Hindia|i
+Sisa Rasa|Mahalini|i
+Kartonyono Medot Janji|Denny Caknan|i
+Asal Kau Bahagia|Armada|i
+Puspa|ST12|i
+Terlalu Manis|Slank|i
+Sobat|Padi|i
+Cinta Dalam Hati|Ungu|i
+Shallow|Lady Gaga, Bradley Cooper|w
+Bad Guy|Billie Eilish|w
+Watermelon Sugar|Harry Styles|w
+Anti-Hero|Taylor Swift|w
+Uptown Funk|Mark Ronson, Bruno Mars|w
+Locked Out of Heaven|Bruno Mars|w
+Havana|Camila Cabello|w
+Photograph|Ed Sheeran|w
+Fix You|Coldplay|w
+Numb|Linkin Park|w
+In the End|Linkin Park|w
+Hotel California|Eagles|w
+Lose Yourself|Eminem|w
+Rolling in the Deep|Adele|w
+Hello|Adele|w
+Memories|Maroon 5|w
+Sugar|Maroon 5|w
+Closer|The Chainsmokers, Halsey|w
+Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split('|'); return { t, a, reg: r[0], rec: false }; }));
+
+    const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const key = (t, a) => ((t || '') + (a || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ID_RE = /indo|dangdut|campursari|keroncong|jawa|sunda|melayu|nasyid|kristen|religi/i;
+  const IC = {
+    play: '<path d="M8 5v14l11-7z" fill="currentColor"/>',
+    pause: '<path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/>',
+    prev: '<path d="M6 5v14"/><path d="M19 5v14L9 12z" fill="currentColor"/>',
+    next: '<path d="M18 5v14"/><path d="M5 5v14l10-7z" fill="currentColor"/>',
+    back: '<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/><text x="12" y="15.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
+    fwd: '<path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/><text x="12" y="15.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">10</text>'
+  };
+  const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+  const thumb = m => m.art ? `<img src="${esc(m.art)}" alt="" loading="lazy">` : `<div class="ph">${esc((m.t[0] || '\u266a').toUpperCase())}</div>`;
+  const cache = new Map();
+  async function it(p) {
+    const url = 'https://itunes.apple.com/search?' + new URLSearchParams({ media: 'music', entity: 'song', country: 'ID', ...p });
+    if (cache.has(url)) return cache.get(url);
+    let d;
+    d = await (await fetch(url)).json();
+    const out = (d.results || []).filter(x => x.previewUrl).map(x => ({
+      t: x.trackName, a: x.artistName, genre: x.primaryGenreName, preview: x.previewUrl,
+      art: x.artworkUrl100 || '', artL: (x.artworkUrl100 || '').replace('100x100', '300x300')
+    }));
+    cache.set(url, out);
+    return out;
+  }
+  async function resolve(m) {
+    if (m.preview) return m;
+    const k = 'mus1:' + key(m.t, m.a);
+    try { const c = JSON.parse(localStorage.getItem(k)); if (c && Date.now() - c.ts < 864e5) return Object.assign(m, c.d); } catch (e) {}
+    const r = await it({ term: m.t + ' ' + m.a, limit: 8 });
+    const kk = key(m.t, '');
+    const b = r.find(x => { const y = key(x.t, ''); return y.includes(kk) || kk.includes(y); });
+    if (!b) return null;
+    const d = { preview: b.preview, art: b.art, artL: b.artL };
+    Object.assign(m, d);
+    try { localStorage.setItem(k, JSON.stringify({ ts: Date.now(), d })); } catch (e) {}
+    return m;
+  }
+  const fx = $('#fx');
+  for (let i = 0; i < 16; i++) {
+    const d = document.createElement('i'); d.className = 'dt';
+    d.style.cssText = `left:${Math.random() * 96}%;top:${8 + Math.random() * 80}vh;animation-delay:${(Math.random() * 6).toFixed(1)}s;animation-duration:${(5 + Math.random() * 4).toFixed(1)}s`;
+    fx.appendChild(d);
+  }
+
+  const wv = $('#wv');
+  for (let i = 0; i < 40; i++) {
+    const b = document.createElement('i');
+    b.style.cssText = `--h:${(.25 + Math.random() * .75).toFixed(2)};animation-delay:${(-Math.random() * 2).toFixed(2)}s;animation-duration:${(1.3 + Math.random() * 1.2).toFixed(2)}s`;
+    wv.appendChild(b);
+  }
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  function lev(a, b) {
+    if (a === b) return 0;
+    let p = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const c = [i];
+      for (let j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      p = c;
+    }
+    return p[b.length];
+  }
+  const tol = n => n <= 3 ? 0 : n <= 5 ? 1 : n <= 9 ? 2 : 3;
+  function score(q, m) {
+    const t = norm(m.t), h = t + ' ' + norm(m.a);
+    if (t === q) return 0;
+    if (t.startsWith(q)) return .1;
+    if (h.includes(q)) return .2;
+    if (q.length < 3) return 9;
+    let best = 9;
+    const qs = q.replace(/ /g, ''), ts = t.replace(/ /g, '');
+    const d1 = Math.min(lev(qs, ts), lev(qs, ts.slice(0, qs.length)));
+    if (d1 <= tol(qs.length)) best = 1 + d1;
+    let tot = 0, ok = true;
+    const hw = h.split(' ');
+    for (const w of q.split(' ')) {
+      let b = 9;
+      for (const x of hw) b = Math.min(b, lev(w, x), lev(w, x.slice(0, w.length)));
+      if (b > tol(w.length)) { ok = false; break; }
+      tot += b;
+    }
+    if (ok) best = Math.min(best, 1 + tot);
+    return best;
+  }
+
+  let view = { list: [] }, seq = 0, timer, recs = null;
+
+  function build(q, remote) {
+    const n = norm(q), intl = n.length >= 5 || n.includes(' ');
+    const sc = n.length < 2
+      ? LOCAL.filter(m => norm(m.t).startsWith(n)).map(m => [0, m])
+      : LOCAL.map(m => [score(n, m), m]).filter(x => x[0] < 9).sort((x, y) => x[0] - y[0]);
+    const loc = sc.map(x => x[1]), fz = sc.length > 0 && sc[0][0] >= 1;
+    const rem = n.length < 3 ? remote : remote.filter(r => score(n, r) < 9);
+    const seen = new Set(), ID = [], W = [], rm = new Map(remote.map(r => [key(r.t, ''), r]));
+    const add = (arr, m) => { const k = key(m.t, ''); if (!seen.has(k)) { seen.add(k); arr.push(m); } };
+    for (const m of loc) { const r = rm.get(key(m.t, '')); add(ID, r ? { ...r, reg: m.reg } : m); }
+    for (const r of rem) {
+      const l = LOCAL.find(m => key(m.t, '') === key(r.t, ''));
+      const reg = l ? l.reg : (ID_RE.test(r.genre || '') ? 'i' : 'w');
+      add(ID, { ...r, reg });
+    }
+    return { ID: ID.slice(0, 30), W: [], fz };
+  }
+
+  const rowH = (m, i) => `<div class="row" data-i="${i}" style="animation-delay:${Math.min(i, 10) * 35}ms">${thumb(m)}<div><b>${esc(m.t)}</b><small>${esc(m.a)}</small></div></div>`;
+  function showResults(b, msg) {
+    const { ID, W, fz } = b, q = $('#q').value.trim();
+    view.list = [...ID, ...W];
+    let h = `<h1>Hasil untuk \u201c${esc(q)}\u201d</h1>`;
+    h += fz && view.list.length ? '<p class="sub">Tidak ada yang persis sama, ini yang paling mirip.</p>' : '<p class="sub"></p>';
+    h += ID.map((m, i) => rowH(m, i)).join('');
+    
+    if (msg) h += `<p class="mt">${msg}</p>`;
+    else if (!view.list.length) h += '<div class="em"><svg viewBox="0 0 64 64"><circle cx="28" cy="28" r="18"/><path d="M42 42l16 16M24 36V22l10-3v14"/><circle cx="21" cy="36" r="3"/><circle cx="31" cy="33" r="3"/></svg><p>Belum ketemu. Coba periksa ejaannya atau ketik nama artisnya.</p></div>';
+    $('#out').innerHTML = h;
+    markOn();
+  }
+  async function remoteSearch(q) {
+    const my = ++seq;
+    try {
+      const r = await it({ term: q, limit: 30 });
+      if (my !== seq || $('#q').value.trim() !== q) return;
+      showResults(build(q, r));
+    } catch (e) {
+      if (my === seq) showResults(build(q, []), 'Pencarian online sedang tidak tersedia. Coba lagi sebentar.');
+    }
+  }
+  function paintRecs() {
+    if ($('#q').value.trim()) return;
+    view.list = recs;
+    $('#out').innerHTML = `<h1>Selamat datang</h1><p class="sub">Mau dengar apa hari ini?</p><h2 style="margin-top:0">Rekomendasi untukmu</h2><div class="grid">` +
+      recs.map((m, i) => `<div class="card" data-i="${i}"><div class="im">${thumb(m)}<span class="pb2">${svg('play')}</span></div><b>${esc(m.t)}</b><small>${esc(m.a)}</small></div>`).join('') + '</div>';
+    markOn();
+  }
+  const BAN = /Deva Premal|Imee Ooi|Tomlin|Redman|Hillsong|Sinach|JPCC|Sabyan|Opick|Maher Zain|Sami Yusuf|Humood/;
+  const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  function newRecs() {
+    const old = new Set((recs || []).map(m => key(m.t, m.a)));
+    const pick = (reg, n) => {
+      const all = LOCAL.filter(m => m.reg === reg && !BAN.test(m.a)), fresh = all.filter(m => !old.has(key(m.t, m.a)));
+      return shuf(fresh.length >= n ? fresh : all).slice(0, n);
+    };
+    const mine = recs = shuf([...pick('i', 8), ...pick('w', 4)]);
+    (async () => { for (const m of mine) { if (recs !== mine) return; await resolve(m).catch(() => 0); if (recs === mine) paintRecs(); await new Promise(r => setTimeout(r, 200)); } })();
+  }
+  function showRecs() { if (!recs) newRecs(); paintRecs(); }
+
+  const qEl = $('#q');
+  qEl.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = qEl.value.trim();
+    $('#clr').hidden = !q; document.body.classList.toggle('cari', !!q);
+    $('#nh').classList.toggle('on', !q); $('#ns').classList.toggle('on', !!q);
+    if (!q) { seq++; showRecs(); return; }
+    showResults(build(q, []), q.length >= 2 ? '<span class="ld"><i></i><i></i><i></i></span>Mencari lebih banyak' : '');
+    if (q.length >= 2) timer = setTimeout(() => remoteSearch(q), 350);
+  });
+  $('#clr').onclick = () => { qEl.value = ''; qEl.dispatchEvent(new Event('input')); qEl.focus(); };
+  $('#nh').onclick = () => { qEl.value = ''; qEl.dispatchEvent(new Event('input')); $('#mn').scrollTo({ top: 0, behavior: 'smooth' }); };
+  $('#ns').onclick = () => qEl.focus();
+  $('#out').addEventListener('click', e => { const r = e.target.closest('[data-i]'); if (r) play(view.list, +r.dataset.i); });
+  const A = document.getElementById('au') || new Audio();
+  A.preload = 'auto'; A.setAttribute('playsinline', '');
+  const SIL = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  const srcCache = new Map();
+  let ctxList = [], idx = -1, tok = 0, fails = 0, dragging = false, cur = null;
+  const isData = () => A.src.startsWith('data:');
+  document.addEventListener('pointerdown', () => { if (!A.src) { A.src = SIL; A.play().catch(() => {}); } }, { once: true });
+
+  $('#bprev').innerHTML = svg('prev'); $('#bback').innerHTML = svg('back');
+  $('#bfwd').innerHTML = svg('fwd'); $('#bnext').innerHTML = svg('next'); $('#bplay').innerHTML = svg('play');
+
+  const fmt = s => isFinite(s) && s > 0 ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
+  const curT = () => A.currentTime || 0;
+  const durT = () => isFinite(A.duration) ? A.duration : 0;
+  const MS = 'mediaSession' in navigator ? navigator.mediaSession : null;
+  function setPlay(on) {
+    $('#bplay').innerHTML = svg(on ? 'pause' : 'play'); $('#bplay').setAttribute('aria-label', on ? 'Jeda' : 'Putar');
+    document.body.classList.toggle('playing', on);
+    if (MS) MS.playbackState = on ? 'playing' : 'paused';
+  }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 3500); }
+  function markOn() {
+    const m = ctxList[idx], same = ctxList === view.list;
+    document.querySelectorAll('[data-i]').forEach(el => el.classList.toggle('on', same && ctxList[+el.dataset.i] === m));
+  }
+  function showPlayer(m, badge) {
+    $('#mp').classList.add('on'); $('#app').classList.add('pb');
+    $('#pth').innerHTML = thumb(m); $('#pt').textContent = m.t; $('#pa').textContent = m.a; $('#bd').textContent = badge;
+    if (MS) { try { MS.metadata = new MediaMetadata({ title: m.t, artist: m.a, artwork: m.artL ? [{ src: m.artL, sizes: '300x300', type: 'image/jpeg' }] : [] }); } catch (e) {} }
+  }
+
+  async function tfetch(u, ms = 7000) {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+    try { const r = await fetch(u, { signal: c.signal }); if (!r.ok) throw new Error('http'); return await r.json(); } finally { clearTimeout(t); }
+  }
+  const AUD = ['https://api.audius.co', 'https://discoveryprovider.audius.co'];
+  async function audius(m) {
+    const k = 'mus3au:' + key(m.t, m.a);
+    try { const c = localStorage.getItem(k); if (c !== null) return c || null; } catch (e) {}
+    const q = encodeURIComponent(m.t + ' ' + m.a), kt = key(m.t, ''), ka = key(String(m.a).split(',')[0], '');
+    for (const h of AUD) {
+      try {
+        const d = await tfetch(`${h}/v1/tracks/search?query=${q}&limit=10&app_name=PemutarLagu`);
+        const x = (d.data || []).find(t => {
+          const tt = key(t.title, ''), uu = key(t.user && t.user.name, '');
+          return t.is_streamable !== false && t.duration > 60 && tt.includes(kt) && ka && (uu.includes(ka) || ka.includes(uu) || tt.includes(ka));
+        });
+        const url = x ? `${h}/v1/tracks/${x.id}/stream?app_name=PemutarLagu` : '';
+        try { localStorage.setItem(k, url); } catch (e) {}
+        return url || null;
+      } catch (e) {}
+    }
+    return null;
+  }
+  async function getSrc(m) {
+    const k = key(m.t, m.a);
+    if (srcCache.has(k)) return srcCache.get(k);
+    const [r, au] = await Promise.all([resolve(m).catch(() => null), audius(m).catch(() => null)]);
+    const s = au ? { url: au, full: true } : (r && r.preview ? { url: r.preview, full: false } : null);
+    if (s) srcCache.set(k, s);
+    return s;
+  }
+  function prefetch() {
+    const n = ctxList[(idx + 1) % ctxList.length];
+    if (n && ctxList.length > 1 && !srcCache.has(key(n.t, n.a))) getSrc(n).catch(() => {});
+  }
+
+  async function play(list, i, hops = 0) {
+    ctxList = list; idx = i; const my = ++tok, m = list[i];
+    markOn();
+    let s = srcCache.get(key(m.t, m.a));
+    if (!s) {
+      showPlayer(m, 'Memuat\u2026');
+      s = await getSrc(m).catch(() => null);
+      if (my !== tok) return;
+    }
+    if (!s) {
+      toast('Lagu ini tidak ditemukan.');
+      if (hops < list.length - 1) return play(list, (i + 1) % list.length, hops + 1);
+      setPlay(false); return;
+    }
+    cur = { m, s };
+    showPlayer(m, s.full ? 'Lagu penuh' : 'Pratinjau 30 detik');
+    A.src = s.url;
+    A.play().catch(() => { setPlay(false); toast('Ketuk tombol putar untuk memulai.'); });
+    prefetch();
+  }
+
+  function toggle() { if (A.src && !isData()) { A.paused ? A.play().catch(() => {}) : A.pause(); } }
+  function seekTo(s) { if (A.src && !isData()) A.currentTime = Math.max(0, s); }
+  function step(d) { if (ctxList.length) play(ctxList, (idx + d + ctxList.length) % ctxList.length); }
+  const prev = () => curT() > 3 ? seekTo(0) : step(-1);
+  $('#bplay').onclick = toggle; $('#bprev').onclick = prev; $('#bnext').onclick = () => step(1);
+  $('#bback').onclick = () => seekTo(curT() - 10);
+  $('#bfwd').onclick = () => seekTo(Math.min(durT() || 1e9, curT() + 10));
+  $('#vol').oninput = e => { A.volume = e.target.value / 100; };
+  A.volume = 0.8;
+
+  const seek = $('#seek');
+  seek.addEventListener('input', () => { dragging = true; $('#t1').textContent = fmt(seek.value / 1000 * durT()); });
+  seek.addEventListener('change', () => { seekTo(seek.value / 1000 * durT()); dragging = false; });
+  A.addEventListener('play', () => { if (!isData()) setPlay(true); });
+  A.addEventListener('pause', () => { if (!isData() && !A.ended) setPlay(false); });
+  A.addEventListener('playing', () => { fails = 0; setPlay(true); });
+  A.addEventListener('ended', () => { if (!isData()) step(1); });
+  A.addEventListener('error', () => {
+    if (isData() || !cur) return;
+    const m = cur.m;
+    if (cur.s.full) {
+      try { localStorage.setItem('mus3au:' + key(m.t, m.a), ''); } catch (e) {}
+      srcCache.delete(key(m.t, m.a));
+      resolve(m).then(r => {
+        if (r && r.preview) {
+          cur = { m, s: { url: r.preview, full: false } }; srcCache.set(key(m.t, m.a), cur.s);
+          showPlayer(m, 'Pratinjau 30 detik'); A.src = r.preview; A.play().catch(() => {});
+          toast('Versi penuh gagal dimuat, memutar pratinjau.');
+        } else step(1);
+      }).catch(() => step(1));
+      return;
+    }
+    if (++fails < 6) { toast('Gagal memutar, lanjut ke lagu berikutnya\u2026'); step(1); } else toast('Lagu tidak bisa diputar saat ini.');
+  });
+  setInterval(() => {
+    if (!$('#mp').classList.contains('on')) return;
+    const c = curT(), d = durT();
+    if (!dragging) { $('#t1').textContent = fmt(c); $('#t2').textContent = fmt(d); seek.value = d ? Math.min(1000, c / d * 1000) : 0; }
+    if (MS && d && !isData()) { try { MS.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); } catch (e) {} }
+  }, 500);
+  if (MS) {
+    const h = (a, f) => { try { MS.setActionHandler(a, f); } catch (e) {} };
+    h('play', toggle); h('pause', toggle); h('previoustrack', prev); h('nexttrack', () => step(1));
+    h('seekbackward', () => seekTo(curT() - 10)); h('seekforward', () => seekTo(curT() + 10));
+    h('seekto', e => seekTo(e.seekTime));
+  }
+
+  const root = document.documentElement, tg = $('#tg');
+  const SUN = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  function setTema(t) {
+    root.dataset.tema = t; tg.innerHTML = t === 'gelap' ? SUN : MOON;
+    tg.setAttribute('aria-label', t === 'gelap' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap');
+    try { localStorage.setItem('tema', t); } catch (e) {}
+  }
+  let t0 = 'gelap'; try { t0 = localStorage.getItem('tema') === 'terang' ? 'terang' : 'gelap'; } catch (e) {}
+  setTema(t0);
+  tg.onclick = () => setTema(root.dataset.tema === 'gelap' ? 'terang' : 'gelap');
+  const mn = $('#mn'), ptr = $('#ptr');
+  let py = null, busy = false, wacc = 0, wt, cool = 0;
+  const setPull = v => { ptr.style.setProperty('--y', v + 'px'); ptr.style.opacity = Math.min(1, v / 40); ptr.firstElementChild.style.transform = `rotate(${v * 5}deg)`; };
+  const canPull = () => mn.scrollTop <= 0 && !busy && !qEl.value.trim() && Date.now() > cool;
+  async function refresh() {
+    busy = true; ptr.classList.add('spin'); setPull(64);
+    await new Promise(r => setTimeout(r, 900));
+    newRecs(); paintRecs();
+    ptr.classList.remove('spin'); setPull(0); busy = false; cool = Date.now() + 700; wacc = 0;
+  }
+  mn.addEventListener('touchstart', e => { py = canPull() ? e.touches[0].clientY : null; }, { passive: true });
+  mn.addEventListener('touchmove', e => {
+    if (py === null) return;
+    const dy = e.touches[0].clientY - py;
+    if (dy > 0 && mn.scrollTop <= 0) setPull(Math.min(90, dy * .5)); else setPull(0);
+  }, { passive: true });
+  mn.addEventListener('touchend', () => {
+    if (py === null) return;
+    const v = parseFloat(ptr.style.getPropertyValue('--y')) || 0; py = null;
+    v >= 55 ? refresh() : setPull(0);
+  });
+  mn.addEventListener('wheel', e => {
+    if (e.deltaY >= 0 || !canPull()) { wacc = 0; return; }
+    wacc += -e.deltaY; setPull(Math.min(90, wacc * .25));
+    clearTimeout(wt); wt = setTimeout(() => { wacc = 0; if (!busy) setPull(0); }, 220);
+    if (wacc >= 260) { clearTimeout(wt); refresh(); }
+  }, { passive: true });
+
+  showRecs();
+})();
+</script>
+</body>
+</html>
