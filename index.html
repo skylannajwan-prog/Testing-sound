@@ -103,16 +103,30 @@
   .tg{position:fixed;top:16px;right:24px;z-index:40;width:42px;height:42px;border:0;border-radius:50%;background:var(--ac);color:var(--acx);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .2s}
   .tg:hover{transform:scale(1.08)}
   .tg svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .ptr{position:fixed;top:76px;left:calc(50% + 125px);width:40px;height:40px;margin-left:-20px;border-radius:50%;background:var(--ac);color:var(--acx);display:grid;place-items:center;z-index:30;pointer-events:none;opacity:0;transform:translateY(calc(var(--y,0px) - 56px));transition:transform .2s,opacity .2s;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  .ptr{position:fixed;top:76px;left:258px;right:8px;margin:0 auto;width:40px;height:40px;border-radius:50%;background:var(--ac);color:var(--acx);display:grid;place-items:center;z-index:30;pointer-events:none;opacity:0;transform:translateY(calc(var(--y,0px) - 56px));transition:transform .2s,opacity .2s;box-shadow:0 6px 20px rgba(0,0,0,.35)}
   .ptr svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
   .ptr.spin svg{animation:spin .8s linear infinite!important}
+  .wave{position:fixed;left:258px;right:8px;bottom:0;height:min(260px,40vh);display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:0 28px;opacity:0;transition:opacity .7s;pointer-events:none;z-index:0;-webkit-mask-image:linear-gradient(transparent,#000);mask-image:linear-gradient(transparent,#000)}
+  body.cari .wave{opacity:.16}
+  .wave i{flex:1;max-width:10px;height:100%;border-radius:6px 6px 0 0;background:var(--ac);transform-origin:bottom;transform:scaleY(.12);animation:eq 1.8s ease-in-out infinite}
+  @keyframes eq{0%,100%{transform:scaleY(.12)}50%{transform:scaleY(var(--h,.7))}}
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .row{animation:up .4s ease both}
+  .em{display:grid;justify-items:center;text-align:center;gap:16px;padding:64px 0;color:var(--mt)}
+  .em svg{width:96px;height:96px;fill:none;stroke:var(--ac);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.5;animation:bob 3s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-8px) rotate(6deg)}}
+  .ld{display:inline-flex;gap:4px;vertical-align:middle;margin-right:10px}
+  .ld i{width:6px;height:6px;border-radius:50%;background:var(--ac);animation:dot 1s ease-in-out infinite both}
+  .ld i:nth-child(2){animation-delay:.15s}.ld i:nth-child(3){animation-delay:.3s}
+  @keyframes dot{0%,80%,100%{transform:scale(.4);opacity:.4}40%{transform:scale(1);opacity:1}}
+  @media(max-width:760px){.wave,.ptr{left:0;right:0}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <aside class="sd pn">
-    <div class="logo">♪ Pemutar</div>
+    <div class="logo">&#x266A; Pemutar</div>
     <button class="nv on" id="nh"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>Beranda</button>
     <button class="nv" id="ns"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Cari</button>
     <div class="viny"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="6"/><path d="M50 4a46 46 0 0 1 20 4" stroke-width="3" stroke-linecap="round"/></svg>Putar lagu, nikmati suasananya</div>
@@ -124,10 +138,11 @@
       <input id="q" type="search" placeholder="Cari lagu atau artis" autocomplete="off" enterkeyhint="search" aria-label="Cari lagu">
       <button class="x" id="clr" hidden aria-label="Hapus pencarian"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div></div>
-    <div class="cn"><div id="out"></div></div>
+    <div class="cn"><div id="out"><p class="mt" style="padding:8px 0">Memuat&#x2026; (jika tulisan ini tidak hilang, script gagal berjalan)</p></div></div>
   </main>
 </div>
 
+<div class="wave" id="wv"></div>
 <button class="tg" id="tg"></button>
 <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4"/></svg></div>
 <div id="ytb"><div id="ytp"></div></div>
@@ -148,6 +163,7 @@
   <div class="r"><span class="bd" id="bd"></span><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></svg><input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
 </footer>
 
+<script>window.addEventListener('error',function(e){var o=document.getElementById('out');if(o)o.innerHTML='<p style="padding:8px 0;color:#f66">Terjadi error: '+e.message+' (baris '+e.lineno+')</p>'});</script>
 <script>
 (() => {
   // ===== PENGATURAN =====
@@ -306,7 +322,7 @@ Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split
     fwd: '<path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/><text x="12" y="15.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">10</text>'
   };
   const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
-  const thumb = m => m.art ? `<img src="${esc(m.art)}" alt="" loading="lazy">` : `<div class="ph">${esc((m.t[0] || '♪').toUpperCase())}</div>`;
+  const thumb = m => m.art ? `<img src="${esc(m.art)}" alt="" loading="lazy">` : `<div class="ph">${esc((m.t[0] || '\u266a').toUpperCase())}</div>`;
 
   // ===== iTunes Search API (gratis, tanpa key). fetch dulu, JSONP sebagai cadangan =====
   const cache = new Map();
@@ -325,42 +341,4 @@ Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split
     const url = 'https://itunes.apple.com/search?' + new URLSearchParams({ media: 'music', entity: 'song', country: 'ID', ...p });
     if (cache.has(url)) return cache.get(url);
     let d;
-    try { d = await (await fetch(url)).json(); } catch (e) { d = await jsonp(url); }
-    const out = (d.results || []).filter(x => x.previewUrl).map(x => ({
-      t: x.trackName, a: x.artistName, genre: x.primaryGenreName, preview: x.previewUrl,
-      art: x.artworkUrl100 || '', artL: (x.artworkUrl100 || '').replace('100x100', '300x300')
-    }));
-    cache.set(url, out);
-    return out;
-  }
-
-  // cari pratinjau + cover untuk lagu katalog lokal (disimpan 24 jam di browser)
-  async function resolve(m) {
-    if (m.preview) return m;
-    const k = 'mus1:' + key(m.t, m.a);
-    try { const c = JSON.parse(localStorage.getItem(k)); if (c && Date.now() - c.ts < 864e5) return Object.assign(m, c.d); } catch (e) {}
-    const r = await it({ term: m.t + ' ' + m.a, limit: 8 });
-    const kk = key(m.t, '');
-    const b = r.find(x => { const y = key(x.t, ''); return y.includes(kk) || kk.includes(y); });
-    if (!b) return null;
-    const d = { preview: b.preview, art: b.art, artL: b.artL };
-    Object.assign(m, d);
-    try { localStorage.setItem(k, JSON.stringify({ ts: Date.now(), d })); } catch (e) {}
-    return m;
-  }
-
-  // ===== DEKORASI =====
-  const fx = $('#fx');
-  for (let i = 0; i < 16; i++) {
-    const d = document.createElement('i'); d.className = 'dt';
-    d.style.cssText = `left:${Math.random() * 96}%;top:${8 + Math.random() * 80}vh;animation-delay:${(Math.random() * 6).toFixed(1)}s;animation-duration:${(5 + Math.random() * 4).toFixed(1)}s`;
-    fx.appendChild(d);
-  }
-
-  // ===== PENCARIAN MIRIP (toleran typo) =====
-  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-  function lev(a, b) {
-    if (a === b) return 0;
-    let p = Array.from({ length: b.length + 1 }, (_, j) => j);
-    for (let i = 1; i <= a.length; i++) {
-      const c
+    try { 
