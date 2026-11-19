@@ -166,11 +166,9 @@
 <script>window.addEventListener('error',function(e){var b=document.getElementById('errb');if(!b){b=document.createElement('div');b.id='errb';b.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99;background:#300;color:#fbb;padding:8px 12px;border-radius:8px;font:12px/1.4 sans-serif';b.onclick=function(){b.remove()};document.body.appendChild(b)}b.textContent='Error: '+e.message+' | '+String(e.filename||'inline').split('/').pop().slice(0,50)+':'+e.lineno});</script>
 <script>
 (() => {
-  // ===== PENGATURAN =====
   const CFG = {
-    YT_KEY: '' // Opsional tapi disarankan: API key YouTube Data v3 agar lagu PENUH lebih stabil.
+    YT_KEY: ''
   };
-  // Tanpa key, aplikasi mencari video lagu lewat server publik Piped/Invidious (bisa sewaktu-waktu mati)
   const PIPED = ['https://pipedapi.kavin.rocks', 'https://pipedapi.adminforge.de', 'https://api.piped.private.coffee'];
   const INV = ['https://inv.nadeko.net', 'https://yewtu.be'];
 
@@ -258,8 +256,6 @@ Gayatri Mantra|Deva Premal|w
 Om Mani Padme Hum|Imee Ooi|w
 Karaniya Metta Sutta|Imee Ooi|w`
     .split('\n').map(l => { const [t, a, r] = l.split('|'); return { t, a, reg: r[0], rec: r.includes('*') }; });
-
-  // ===== TAMBAHAN KATALOG (dilengkapi) =====
   LOCAL.push(...`Pejantan Tangguh|Sheila On 7|i
 Melompat Lebih Tinggi|Sheila On 7|i
 Pamit|Tulus|i
@@ -323,8 +319,6 @@ Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split
   };
   const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
   const thumb = m => m.art ? `<img src="${esc(m.art)}" alt="" loading="lazy">` : `<div class="ph">${esc((m.t[0] || '\u266a').toUpperCase())}</div>`;
-
-  // ===== iTunes Search API (gratis, tanpa key). fetch dulu, JSONP sebagai cadangan =====
   const cache = new Map();
   async function it(p) {
     const url = 'https://itunes.apple.com/search?' + new URLSearchParams({ media: 'music', entity: 'song', country: 'ID', ...p });
@@ -333,4 +327,13 @@ Happier|Marshmello, Bastille|w`.split('\n').map(l => { const [t, a, r] = l.split
     d = await (await fetch(url)).json();
     const out = (d.results || []).filter(x => x.previewUrl).map(x => ({
       t: x.trackName, a: x.artistName, genre: x.primaryGenreName, preview: x.previewUrl,
-      art: x.artworkUrl100 || '', artL: (x.artw
+      art: x.artworkUrl100 || '', artL: (x.artworkUrl100 || '').replace('100x100', '300x300')
+    }));
+    cache.set(url, out);
+    return out;
+  }
+  async function resolve(m) {
+    if (m.preview) return m;
+    const k = 'mus1:' + key(m.t, m.a);
+    try { const c = JSON.parse(localStorage.getItem(k)); if (c && Date.now() - c.ts < 864e5) return Object.assign(m, c.d); } catch (e) {}
+    const r = await 
